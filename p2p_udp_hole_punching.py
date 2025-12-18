@@ -1,6 +1,6 @@
 import socket
 import threading
-import time
+import time, io
 from typing import Optional, Tuple
 from datetime import datetime, timezone
 
@@ -24,7 +24,9 @@ class NATClient:
 
         # Buffer réception
         self.recv_buffer = []
+        self.buffer = io.BytesIO()
         self.buffer_lock = threading.Lock()
+        self.connected = False
 
     # -------------------- SOCKET --------------------
 
@@ -40,20 +42,24 @@ class NATClient:
         while self.running:
             try:
                 data, addr = self.sock.recvfrom(4096)
-                msg = data.decode(errors="ignore").strip()
+                
+                if not self.connected:
+                    msg = data.decode(errors="ignore").strip()
 
-                #print(f"[{self.cid}] ← {msg} de {addr}")
+                    #print(f"[{self.cid}] ← {msg} de {addr}")
 
-                if msg.startswith("PEER"):
-                    _, ip, port, timeStamp = msg.split()
-                    self.peer = (ip, int(port))
-                    if not(_said):
-                        _said = True
-                        print(f"[{self.cid}] ✅ PEER défini → {self.peer}")
+                    if msg.startswith("PEER"):
+                        _, ip, port, timeStamp = msg.split()
+                        self.peer = (ip, int(port))
+                        if not(_said):
+                            _said = True
+                            print(f"[{self.cid}] ✅ PEER défini → {self.peer}")
 
+                    else:
+                        with self.buffer_lock:
+                            self.recv_buffer.append((data, addr))
                 else:
-                    with self.buffer_lock:
-                        self.recv_buffer.append((data, addr))
+                    self.buffer.write(data)
 
             except socket.timeout:
                 pass
@@ -85,21 +91,17 @@ class NATClient:
         if isinstance(data, str):
             data = data.encode()
 
-        self.sock.sendto(data, self.peer)
+        for i in range(len(data)//1024 + 1):
+            chunk = data[i*1024:(i+1)*1024]
+            self.sock.sendto(chunk, self.peer)
+        
 
-    def recv(self, timeout: float | None = None) -> bytes:
+    def recv(self, timeout: float | None = 0.01) -> bytes:
         start = time.time()
-
-        while True:
-            with self.buffer_lock:
-                if self.recv_buffer:
-                    data, _ = self.recv_buffer.pop(0)
-                    return data
-
-            if timeout is not None and time.time() - start > timeout:
-                raise TimeoutError("recv timeout")
-
-            time.sleep(0.01)
+        ret = self.buffer.getvalue()
+        self.buffer = io.BytesIO()
+        time.sleep(timeout)
+        return ret
 
     # -------------------- START --------------------
 
@@ -151,13 +153,13 @@ if __name__ == "__main__":
     if cid == "1":
         # Envoi de messages toutes les 2 secondes
         try:
-            count = 0
             while True:
-                message = f"Message {count} de {cid}"
-                print(f"[{cid}] → {message} vers {client.peer}")
-                message = input("Entrez le message à envoyer: ")
-                client.send(message)
-                count += 1
+                filename = input(f"[{cid}] Fichier à envoyer (entrée pour passer) : ")
+                if filename:
+                    with open(filename, "rb") as f:
+                        data = f.read()
+                        client.send(data)
+                        print(f"[{cid}] envoyé : {len(data)} octets depuis {filename}")
                 time.sleep(0.1)
         except KeyboardInterrupt:
             pass
@@ -165,8 +167,16 @@ if __name__ == "__main__":
         # Réception de messages
         try:
             while True:
-                data = client.recv(timeout=120)
-                print(f"[{cid}] reçu : {data.decode(errors='ignore')}")
+                try:
+                    data = client.recv(timeout=120)
+                    if data:
+                        print(f"[{cid}] reçu : {len(data)} octets")
+                        filename = f"recu_{int(time.time())}.bin"
+                        with open(filename, "wb") as f:
+                            f.write(data)
+                        print(f"[{cid}] sauvegardé dans {filename}")
+                except TimeoutError:
+                    pass
         except TimeoutError:
             print(f"[{cid}] ⏳ Timeout de réception, arrêt.")
         
