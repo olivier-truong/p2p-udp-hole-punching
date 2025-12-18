@@ -39,6 +39,7 @@ class NATClient:
 
     def _recv_loop(self):
         _said = False
+        i = 0
         while self.running:
             try:
                 data, addr = self.sock.recvfrom(6144)
@@ -60,6 +61,9 @@ class NATClient:
                             self.recv_buffer.append((data, addr))
                 else:
                     self.buffer.write(data)
+                    self.buffer.flush()
+                    if i % 100 == 50:
+                        print(f"[{self.cid}] ← {len(data)} octets de {addr}")
 
             except socket.timeout:
                 pass
