@@ -43,7 +43,7 @@ class NATClient:
         while self.running:
             try:
                 print(f"[{self.cid}] Waiting to recv...")
-                data, addr = self.sock.recvfrom(1472)
+                data, addr = self.sock.recvfrom(1473)
                 print("data length recv:", len(data), "connected:", self.connected)
                 if not(self.connected):
                     msg = data.decode(errors="ignore").strip()
@@ -97,8 +97,8 @@ class NATClient:
         if isinstance(data, str):
             data = data.encode()
 
-        for i in range(len(data)//1472 + 1):
-            chunk = data[i*1472:(i+1)*1472]
+        for i in range(len(data)//1473 + 1):
+            chunk = data[i*1473:(i+1)*1473]
             self.sock.sendto(chunk, self.peer)
         
 
