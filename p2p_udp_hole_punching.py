@@ -170,6 +170,7 @@ if __name__ == "__main__":
             while True:
                 try:
                     data = client.recv(timeout=120)
+                    print("data length:", len(data))
                     if data:
                         print(f"[{cid}] reçu : {len(data)} octets")
                         filename = f"recu_{int(time.time())}.bin"
