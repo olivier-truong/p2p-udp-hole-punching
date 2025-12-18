@@ -62,12 +62,12 @@ class NATClient:
                         with self.buffer_lock:
                             self.recv_buffer.append((data, addr))
                 else:
-                    sha.update(data)
+                    #sha.update(data)
                     self.buffer.write(data)
                     self.buffer.flush()
-                    if len(data) < self.mtu:
-                        print(f"[{self.cid}] ✅ Message complet reçu ({self.buffer.tell()} octets), sha256: {sha.hexdigest()}")
-                        sha = sha256()
+                    #if len(data) < self.mtu:
+                    #    print(f"[{self.cid}] ✅ Message complet reçu ({self.buffer.tell()} octets), sha256: {sha.hexdigest()}")
+                    #    sha = sha256()
 
             except socket.timeout:
                 pass
@@ -108,7 +108,6 @@ class NATClient:
     def recv(self, timeout: float | None = 0.005) -> bytes:
         start = time.time()
         ret = self.buffer.getvalue()
-        print(f"[{self.cid}] reçu : {len(ret)} octets")
         self.buffer = io.BytesIO()
         time.sleep(timeout)
         return ret
@@ -186,7 +185,7 @@ if __name__ == "__main__":
                     if data:
                         print(f"[{cid}] reçu : {len(data)} octets")
                         filename = f"recu_{int(time.time())}.bin"
-                        with open(filename, "wb") as f:
+                        with open(filename, "ab") as f:
                             f.write(data)
                         print(f"[{cid}] sauvegardé dans {filename}")
                 except Exception as e:
