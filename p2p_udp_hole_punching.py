@@ -41,7 +41,7 @@ class NATClient:
         _said = False
         while self.running:
             try:
-                data, addr = self.sock.recvfrom(4096)
+                data, addr = self.sock.recvfrom(6144)
                 
                 if not self.connected:
                     msg = data.decode(errors="ignore").strip()
@@ -91,12 +91,12 @@ class NATClient:
         if isinstance(data, str):
             data = data.encode()
 
-        for i in range(len(data)//1024 + 1):
-            chunk = data[i*1024:(i+1)*1024]
+        for i in range(len(data)//6144 + 1):
+            chunk = data[i*6144:(i+1)*6144]
             self.sock.sendto(chunk, self.peer)
         
 
-    def recv(self, timeout: float | None = 0.01) -> bytes:
+    def recv(self, timeout: float | None = 0.005) -> bytes:
         start = time.time()
         ret = self.buffer.getvalue()
         self.buffer = io.BytesIO()
@@ -149,6 +149,7 @@ if __name__ == "__main__":
     client.start()
 
     print(f"[{cid}] 🟢 prêt à échanger")
+    client.connected = True
 
     if cid == "1":
         # Envoi de messages toutes les 2 secondes
