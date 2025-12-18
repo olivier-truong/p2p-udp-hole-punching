@@ -42,6 +42,7 @@ class NATClient:
         i = 0
         while self.running:
             try:
+                print(f"[{self.cid}] Waiting to recv...")
                 data, addr = self.sock.recvfrom(6144)
                 print("data length recv:", len(data), "connected:", self.connected)
                 if not(self.connected):
@@ -67,7 +68,7 @@ class NATClient:
                 i += 1
 
             except socket.timeout:
-                pass
+                print(f"[{self.cid}] ⏳ Timeout réception")
 
     # -------------------- SIGNALING --------------------
 
