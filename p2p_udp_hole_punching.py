@@ -187,6 +187,7 @@ if __name__ == "__main__":
         
     try:
         while True:
+            print("parti")
             time.sleep(1)   
     except KeyboardInterrupt:
         client.stop()
