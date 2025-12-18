@@ -102,6 +102,7 @@ class NATClient:
     def recv(self, timeout: float | None = 0.005) -> bytes:
         start = time.time()
         ret = self.buffer.getvalue()
+        print(f"[{self.cid}] reçu : {len(ret)} octets")
         self.buffer = io.BytesIO()
         time.sleep(timeout)
         return ret
