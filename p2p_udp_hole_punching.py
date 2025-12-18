@@ -41,12 +41,9 @@ class NATClient:
 
     def _recv_loop(self):
         _said = False
-        i = 0
         while self.running:
             try:
-                print(f"[{self.cid}] Waiting to recv...")
                 data, addr = self.sock.recvfrom(self.mtu)
-                print("data length recv:", len(data), "connected:", self.connected)
                 if not(self.connected):
                     msg = data.decode(errors="ignore").strip()
 
@@ -57,7 +54,7 @@ class NATClient:
                         self.peer = (ip, int(port))
                         if not(_said):
                             _said = True
-                            print(f"[{self.cid}] ✅ PEER défini → {self.peer}")
+                            # print(f"[{self.cid}] ✅ PEER défini → {self.peer}")
 
                     else:
                         with self.buffer_lock:
@@ -65,9 +62,6 @@ class NATClient:
                 else:
                     self.buffer.write(data)
                     self.buffer.flush()
-                    if i % 100 == 50:
-                        print(f"[{self.cid}] ← {len(data)} octets de {addr}")
-                i += 1
 
             except socket.timeout:
                 print(f"[{self.cid}] ⏳ Timeout réception")
