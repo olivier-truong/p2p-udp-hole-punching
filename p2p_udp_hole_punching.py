@@ -3,6 +3,7 @@ import threading
 import time, io
 from typing import Optional, Tuple
 from datetime import datetime, timezone
+from hashlib import sha256
 
 
 class NATClient:
@@ -41,6 +42,7 @@ class NATClient:
 
     def _recv_loop(self):
         _said = False
+        sha = sha256()
         while self.running:
             try:
                 data, addr = self.sock.recvfrom(self.mtu)
@@ -60,8 +62,12 @@ class NATClient:
                         with self.buffer_lock:
                             self.recv_buffer.append((data, addr))
                 else:
+                    sha.update(data)
                     self.buffer.write(data)
                     self.buffer.flush()
+                    if len(data) < self.mtu:
+                        print(f"[{self.cid}] ✅ Message complet reçu ({self.buffer.tell()} octets), sha256: {sha.hexdigest()}")
+                        sha = sha256()
 
             except socket.timeout:
                 pass
