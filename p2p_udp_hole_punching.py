@@ -64,7 +64,8 @@ class NATClient:
                     self.buffer.flush()
 
             except socket.timeout:
-                print(f"[{self.cid}] ⏳ Timeout réception")
+                pass
+                #print(f"[{self.cid}] ⏳ Timeout réception")
 
     # -------------------- SIGNALING --------------------
 
@@ -172,7 +173,6 @@ if __name__ == "__main__":
             while True:
                 try:
                     data = client.recv(timeout=120)
-                    print("data length:", len(data))
                     if data:
                         print(f"[{cid}] reçu : {len(data)} octets")
                         filename = f"recu_{int(time.time())}.bin"
