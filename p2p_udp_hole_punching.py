@@ -28,6 +28,8 @@ class NATClient:
         self.buffer_lock = threading.Lock()
         self.connected = False
 
+        self.mtu = 1472 - 50  # taille max UDP pour éviter fragmentation
+
     # -------------------- SOCKET --------------------
 
     def _init_socket(self):
@@ -43,7 +45,7 @@ class NATClient:
         while self.running:
             try:
                 print(f"[{self.cid}] Waiting to recv...")
-                data, addr = self.sock.recvfrom(1473)
+                data, addr = self.sock.recvfrom(self.mtu)
                 print("data length recv:", len(data), "connected:", self.connected)
                 if not(self.connected):
                     msg = data.decode(errors="ignore").strip()
@@ -97,8 +99,8 @@ class NATClient:
         if isinstance(data, str):
             data = data.encode()
 
-        for i in range(len(data)//1473 + 1):
-            chunk = data[i*1473:(i+1)*1473]
+        for i in range(len(data)//self.mtu + 1):
+            chunk = data[i*self.mtu:(i+1)*self.mtu]
             self.sock.sendto(chunk, self.peer)
         
 
