@@ -43,10 +43,10 @@ class NATClient:
             try:
                 data, addr = self.sock.recvfrom(6144)
                 
-                if not self.connected:
+                if not(self.connected):
                     msg = data.decode(errors="ignore").strip()
 
-                    #print(f"[{self.cid}] ← {msg} de {addr}")
+                    print(f"[{self.cid}] ← {msg} de {addr}")
 
                     if msg.startswith("PEER"):
                         _, ip, port, timeStamp = msg.split()
