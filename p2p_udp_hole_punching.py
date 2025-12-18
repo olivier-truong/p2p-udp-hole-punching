@@ -169,6 +169,9 @@ if __name__ == "__main__":
                 if filename:
                     with open(filename, "rb") as f:
                         data = f.read()
+                        sha = sha256()
+                        sha.update(data)
+                        print(f"[{cid}] envoyé : {len(data)} octets depuis {filename}, sha256: {sha.hexdigest()}")
                         client.send(data)
                         print(f"[{cid}] envoyé : {len(data)} octets depuis {filename}")
                 time.sleep(0.1)
