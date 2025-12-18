@@ -25,7 +25,7 @@ class NATClient:
 
         # Buffer réception
         self.recv_buffer = []
-        self.buffer = io.BytesIO()
+        self.buffer = b""
         self.buffer_lock = threading.Lock()
         self.connected = False
 
@@ -63,8 +63,8 @@ class NATClient:
                             self.recv_buffer.append((data, addr))
                 else:
                     #sha.update(data)
-                    self.buffer.write(data)
-                    self.buffer.flush()
+                    self.buffer += data
+                    #self.buffer.flush()
                     #if len(data) < self.mtu:
                     #    print(f"[{self.cid}] ✅ Message complet reçu ({self.buffer.tell()} octets), sha256: {sha.hexdigest()}")
                     #    sha = sha256()
@@ -107,8 +107,8 @@ class NATClient:
 
     def recv(self, timeout: float | None = 0.005) -> bytes:
         start = time.time()
-        ret = self.buffer.getvalue()
-        self.buffer = io.BytesIO()
+        ret = self.buffer
+        self.buffer = self.buffer[len(ret):]
         time.sleep(timeout)
         return ret
 
