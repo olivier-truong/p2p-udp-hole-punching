@@ -107,7 +107,7 @@ class NATClient:
 
     def recv(self, timeout: float | None = 0.005) -> bytes:
         start = time.time()
-        ret = self.buffer
+        ret = self.buffer.copy()
         self.buffer = self.buffer
         time.sleep(timeout)
         return ret
