@@ -177,8 +177,8 @@ if __name__ == "__main__":
                         with open(filename, "wb") as f:
                             f.write(data)
                         print(f"[{cid}] sauvegardé dans {filename}")
-                except TimeoutError:
-                    pass
+                except Exception as e:
+                    print(e)
         except TimeoutError:
             print(f"[{cid}] ⏳ Timeout de réception, arrêt.")
         
