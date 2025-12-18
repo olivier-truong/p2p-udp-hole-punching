@@ -1,0 +1,178 @@
+import socket
+import threading
+import time
+from typing import Optional, Tuple
+from datetime import datetime, timezone
+
+
+class NATClient:
+    def __init__(
+        self,
+        cid: str,
+        server: Tuple[str, int],
+        timeout: float = 0.5
+    ):
+        self.cid = cid
+        self.server = server
+        self.timeout = timeout
+
+        self.peer: Optional[Tuple[str, int]] = None
+        self.sock: Optional[socket.socket] = None
+        self.timeStampPeer: Optional[float] = time.time() + 20
+
+        self.running = False
+
+        # Buffer réception
+        self.recv_buffer = []
+        self.buffer_lock = threading.Lock()
+
+    # -------------------- SOCKET --------------------
+
+    def _init_socket(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind(("0.0.0.0", 0))
+        self.sock.settimeout(self.timeout)
+
+    # -------------------- RECEIVE LOOP --------------------
+
+    def _recv_loop(self):
+        _said = False
+        while self.running:
+            try:
+                data, addr = self.sock.recvfrom(4096)
+                msg = data.decode(errors="ignore").strip()
+
+                #print(f"[{self.cid}] ← {msg} de {addr}")
+
+                if msg.startswith("PEER"):
+                    _, ip, port, timeStamp = msg.split()
+                    self.peer = (ip, int(port))
+                    if not(_said):
+                        _said = True
+                        print(f"[{self.cid}] ✅ PEER défini → {self.peer}")
+
+                else:
+                    with self.buffer_lock:
+                        self.recv_buffer.append((data, addr))
+
+            except socket.timeout:
+                pass
+
+    # -------------------- SIGNALING --------------------
+
+    def signal(self, count: int = 10):
+        for _ in range(count):
+            self.sock.sendto(f"HELLO {self.cid}".encode(), self.server)
+            time.sleep(self.timeout / 10)
+
+    # -------------------- HOLE PUNCH --------------------
+
+    def punch(self, count: int = 5):
+        if not self.peer:
+            return
+
+        print(f"[{self.cid}] 🔥 Hole punching vers {self.peer}")
+        for i in range(count):
+            self.sock.sendto(f"P2P {self.cid} {i}".encode(), self.peer)
+            time.sleep(self.timeout)
+
+    # -------------------- SEND / RECV --------------------
+
+    def send(self, data: bytes | str):
+        if not self.peer:
+            raise RuntimeError("Peer non défini")
+
+        if isinstance(data, str):
+            data = data.encode()
+
+        self.sock.sendto(data, self.peer)
+
+    def recv(self, timeout: float | None = None) -> bytes:
+        start = time.time()
+
+        while True:
+            with self.buffer_lock:
+                if self.recv_buffer:
+                    data, _ = self.recv_buffer.pop(0)
+                    return data
+
+            if timeout is not None and time.time() - start > timeout:
+                raise TimeoutError("recv timeout")
+
+            time.sleep(0.01)
+
+    # -------------------- START --------------------
+
+    def start(self):
+        self._init_socket()
+        self.running = True
+
+        threading.Thread(
+            target=self._recv_loop,
+            daemon=True
+        ).start()
+
+        print(f"[{self.cid}] 📡 Signalisation")
+        self.signal()
+
+        print(f"[{self.cid}] ⏳ Attente peer")
+        start = time.time()
+        while self.peer is None and time.time() - start < 20:
+            time.sleep(self.timeout)
+
+        if self.peer:
+            self.punch()
+        else:
+            print(f"[{self.cid}] ❌ Aucun peer")
+
+    def stop(self):
+        self.running = False
+        if self.sock:
+            self.sock.close()
+
+
+# -------------------- MAIN --------------------
+
+if __name__ == "__main__":
+    import sys
+
+    cid = sys.argv[1]
+    SERVER = ("vps1.glz.ovh", 3478)
+
+    client = NATClient(cid, SERVER)
+
+    dt = datetime.now(tz=timezone.utc)
+    
+    
+    client.start()
+
+    print(f"[{cid}] 🟢 prêt à échanger")
+
+    if cid == "1":
+        # Envoi de messages toutes les 2 secondes
+        try:
+            count = 0
+            while True:
+                message = f"Message {count} de {cid}"
+                print(f"[{cid}] → {message} vers {client.peer}")
+                message = input("Entrez le message à envoyer: ")
+                client.send(message)
+                count += 1
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            pass
+    else:
+        # Réception de messages
+        try:
+            while True:
+                data = client.recv(timeout=120)
+                print(f"[{cid}] reçu : {data.decode(errors='ignore')}")
+        except TimeoutError:
+            print(f"[{cid}] ⏳ Timeout de réception, arrêt.")
+        
+    try:
+        while True:
+            time.sleep(1)   
+    except KeyboardInterrupt:
+        client.stop()
+        print(f"[{cid}] 🔴 arrêté")
