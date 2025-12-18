@@ -43,7 +43,7 @@ class NATClient:
         while self.running:
             try:
                 data, addr = self.sock.recvfrom(6144)
-                
+                print("data length recv:", len(data), "connected:", self.connected)
                 if not(self.connected):
                     msg = data.decode(errors="ignore").strip()
 
@@ -64,7 +64,7 @@ class NATClient:
                     self.buffer.flush()
                     if i % 100 == 50:
                         print(f"[{self.cid}] ← {len(data)} octets de {addr}")
-                    i += 1
+                i += 1
 
             except socket.timeout:
                 pass
