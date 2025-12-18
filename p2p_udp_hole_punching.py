@@ -64,6 +64,7 @@ class NATClient:
                     self.buffer.flush()
                     if i % 100 == 50:
                         print(f"[{self.cid}] ← {len(data)} octets de {addr}")
+                    i += 1
 
             except socket.timeout:
                 pass
