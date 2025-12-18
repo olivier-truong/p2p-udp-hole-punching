@@ -43,6 +43,7 @@ class NATClient:
     def _recv_loop(self):
         _said = False
         sha = sha256()
+        f = open("buffer_temp.bin", "wb")
         while self.running:
             try:
                 data, addr = self.sock.recvfrom(self.mtu)
@@ -63,7 +64,7 @@ class NATClient:
                             self.recv_buffer.append((data, addr))
                 else:
                     #sha.update(data)
-                    self.buffer += data
+                    f.write(data)
                     #self.buffer.flush()
                     #if len(data) < self.mtu:
                     #    print(f"[{self.cid}] ✅ Message complet reçu ({self.buffer.tell()} octets), sha256: {sha.hexdigest()}")
@@ -107,8 +108,8 @@ class NATClient:
 
     def recv(self, timeout: float | None = 0.005) -> bytes:
         start = time.time()
-        ret = self.buffer.copy()
-        self.buffer = self.buffer
+        
+        ret = b""
         time.sleep(timeout)
         return ret
 
