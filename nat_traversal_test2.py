@@ -87,7 +87,7 @@ class NATClient:
         for i in range(0, len(data), self.mtu):
             chunk = data[i:i + self.mtu]
             self.sock.sendto(chunk, self.peer)
-        
+         
 
     def recv(self, timeout: float | None = None) -> bytes:
         start = time.time()
