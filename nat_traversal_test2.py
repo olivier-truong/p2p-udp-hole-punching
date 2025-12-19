@@ -99,6 +99,29 @@ class NATClient:
 
             time.sleep(0.01)
 
+    @staticmethod
+    def crc64Bytes(data: bytes) -> int:
+        POLY = 0x42F0E1EBA9EA3693
+        table = []
+        for byte in range(256):
+            crc = byte << 56
+            for _ in range(8):
+                if (crc & (1 << 63)) != 0:
+                    crc = (crc << 1) ^ POLY
+                else:
+                    crc <<= 1
+                crc &= 0xFFFFFFFFFFFFFFFF
+            table.append(crc)
+
+        crc = 0xFFFFFFFFFFFFFFFF
+        for byte in data:
+            index = ((crc >> 56) ^ byte) & 0xFF
+            crc = table[index] ^ (crc << 8)
+            crc &= 0xFFFFFFFFFFFFFFFF
+
+        return crc ^ 0xFFFFFFFFFFFFFFFF
+
+
     # -------------------- START --------------------
 
     def start(self):
