@@ -15,6 +15,7 @@ class NATClient:
         self.cid = cid
         self.server = server
         self.timeout = timeout
+        self.mtu = 1472 - 50  # taille max UDP pour éviter fragmentation
 
         self.peer: Optional[Tuple[str, int]] = None
         self.sock: Optional[socket.socket] = None
@@ -38,7 +39,7 @@ class NATClient:
     def _recv_loop(self):
         while self.running:
             try:
-                data, addr = self.sock.recvfrom(2048)
+                data, addr = self.sock.recvfrom(self.mtu)
                 msg = data.decode(errors="ignore").strip()
 
                 print(f"[{self.cid}] ← {msg} de {addr}")
@@ -82,8 +83,11 @@ class NATClient:
 
         if isinstance(data, str):
             data = data.encode()
-
-        self.sock.sendto(data, self.peer)
+        
+        for i in range(0, len(data), self.mtu):
+            chunk = data[i:i + self.mtu]
+            self.sock.sendto(chunk, self.peer)
+        
 
     def recv(self, timeout: float | None = None) -> bytes:
         start = time.time()
