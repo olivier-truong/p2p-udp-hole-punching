@@ -3,7 +3,7 @@ import time
 from datetime import datetime, timezone
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(("0.0.0.0", 3478))
+sock.bind(("0.0.0.0", 34780))
 
 clients = {}
 last_seen = {}

@@ -162,7 +162,7 @@ if __name__ == "__main__":
     import sys
 
     cid = sys.argv[1]
-    SERVER = ("vps1.glz.ovh", 3478)
+    SERVER = ("vps1.glz.ovh", 34780)
 
     client = NATClient(cid, SERVER)
 
